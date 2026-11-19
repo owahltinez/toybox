@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="data:,">
+    <title>Toybox</title>
+    <script type="module" src="./main.js"></script>
+  </head>
+  <body class="m-0 h-dvh w-dvw flex flex-col md:flex-row bg-gray-900 text-white font-sans overflow-hidden">
+    <main class="flex-1 min-h-0 min-w-0 relative">
+      <div id="viewport" class="absolute inset-0"></div>
+      <h1 class="absolute top-3 left-4 md:top-6 md:left-8 m-0 text-3xl md:text-6xl font-bold text-gray-800" :text="robot.name"></h1>
+      <ul
+        :show="problems.length"
+        class="absolute bottom-3 left-4 md:bottom-6 md:left-8 m-0 p-3 md:p-4 list-none rounded-lg bg-red-900/80 md:text-xl"
+      >
+        <li :for="problem in problems" :text="problem"></li>
+      </ul>
+      <p class="absolute bottom-2 right-4 md:bottom-6 md:right-8 m-0 text-xs md:text-lg text-gray-500" :text="stats"></p>
+    </main>
+    <aside
+      :show="editing"
+      class="h-[55dvh] md:h-auto md:w-[26rem] shrink-0 flex flex-col gap-3 md:gap-4 p-3 md:p-5 bg-gray-800 overflow-y-auto"
+    >
+      <label class="flex flex-col gap-1 text-sm text-gray-300">
+        Name
+        <input
+          class="bg-gray-900 text-white text-2xl rounded-lg px-3 py-2 border border-gray-600"
+          :prop:value="robot.name"
+          :on:input="rename($event.target.value)"
+        />
+      </label>
+      <div class="flex gap-2">
+        <select
+          aria-label="Example robots"
+          class="flex-1 min-w-0 bg-gray-700 text-white text-lg rounded-lg px-3 border-0"
+          :on:change="choose($event.target)"
+        >
+          <option value="" disabled selected>Examples…</option>
+          <option :for="p in presets" :attr:value="p" :text="p"></option>
+        </select>
+        <button
+          class="h-12 px-4 rounded-lg bg-gray-700 hover:bg-gray-600 text-lg font-semibold"
+          :on:click="surprise()"
+        >🎲 Surprise me</button>
+      </div>
+      <section :for="slot in slots" class="flex flex-col gap-2 p-3 rounded-xl bg-gray-900">
+        <div class="flex items-center gap-2">
+          <h2 class="m-0 w-20 text-lg font-semibold text-gray-300" :text="labels[slot]"></h2>
+          <button
+            class="w-12 h-12 rounded-lg bg-gray-700 hover:bg-gray-600 text-2xl"
+            :attr:aria-label="'Previous ' + labels[slot]"
+            :on:click="cycle(slot, -1)"
+          >◀</button>
+          <span class="flex-1 text-center text-2xl font-bold capitalize" :text="robot[slot].kind"></span>
+          <button
+            class="w-12 h-12 rounded-lg bg-gray-700 hover:bg-gray-600 text-2xl"
+            :attr:aria-label="'Next ' + labels[slot]"
+            :on:click="cycle(slot, 1)"
+          >▶</button>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-20 text-sm text-gray-400">Size</span>
+          <button
+            class="w-12 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 text-2xl"
+            :attr:aria-label="'Smaller ' + labels[slot]"
+            :on:click="resize(slot, -1)"
+          >−</button>
+          <span class="flex-1 text-center text-xl" :text="Math.round((robot[slot].size ?? 1) * 100) + '%'"></span>
+          <button
+            class="w-12 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 text-2xl"
+            :attr:aria-label="'Bigger ' + labels[slot]"
+            :on:click="resize(slot, 1)"
+          >+</button>
+        </div>
+        <div class="flex items-start gap-2">
+          <span class="w-20 pt-2 text-sm text-gray-400">Color</span>
+          <div class="flex flex-1 flex-wrap gap-2">
+            <button
+              :for="c in colors"
+              class="w-8 h-8 md:w-10 md:h-10 rounded-full border-4"
+              :class="robot[slot].color === c.name ? 'border-white' : 'border-gray-600'"
+              :attr:style="'background-color: ' + c.hex"
+              :attr:title="c.name"
+              :attr:aria-label="labels[slot] + ' ' + c.name"
+              :attr:aria-pressed="robot[slot].color === c.name"
+              :on:click="paint(slot, c.name)"
+            ></button>
+          </div>
+        </div>
+      </section>
+      <div class="flex gap-2">
+        <button
+          class="px-6 py-4 rounded-xl bg-gray-700 hover:bg-gray-600 text-2xl font-bold"
+          :on:click="share()"
+          :text="shared || 'Share'"
+        ></button>
+        <button
+          class="flex-1 py-4 rounded-xl bg-green-700 hover:bg-green-600 text-2xl font-bold"
+          :on:click="download()"
+        >Download</button>
+      </div>
+      <p class="hidden md:block m-0 text-xs text-gray-500">Press E to hide this panel.</p>
+    </aside>
+  </body>
+</html>
