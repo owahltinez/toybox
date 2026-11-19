@@ -45,7 +45,8 @@ random robot.
   hands clear the ground.
 - `src/slicer.test.ts` slices every part at every size with OrcaSlicer's auto
   supports on and fails if it would add any. It runs where OrcaSlicer and the
-  `kobra-slice` script sit next to this repo, and is skipped elsewhere.
+  [kobra](https://github.com/owahltinez/kobra) CLI are installed, and is
+  skipped elsewhere.
 
 ## Printing
 
@@ -60,7 +61,9 @@ Press Download in the app for `<robot>.3mf`, a plain core-spec 3MF:
   shares the format), other slicers use their defaults.
 
 Map each color to a loaded filament and print the parts one at a time, so
-filament only changes between parts.
+filament only changes between parts. On a Kobra S1 with an ACE,
+[kobra](https://github.com/owahltinez/kobra) does both:
+`kobra slice robot.3mf --slot-for blue=1 --slot-for red=2`.
 
 ## Commands
 

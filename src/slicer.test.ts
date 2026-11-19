@@ -8,7 +8,7 @@ import { cleanup, loadManifold, meshData } from "./mesh";
 import { to3mf } from "./threemf";
 
 const ORCA = "/Applications/OrcaSlicer.app";
-const SLICER = join(import.meta.dir, "../../kobra-slice/slice.py");
+const KOBRA = Bun.which("kobra");
 const m = await loadManifold();
 afterEach(cleanup);
 
@@ -42,7 +42,7 @@ const parts: [string, () => Manifold][] = [
 
 // The slicer is the judge of printability: it must find nothing to support.
 // Parts go through the same 3MF hand-off the app downloads.
-test.skipIf(!existsSync(ORCA) || !existsSync(SLICER)).each(parts)(
+test.skipIf(!existsSync(ORCA) || !KOBRA).each(parts)(
   "%s needs no support",
   async (_, part) => {
     const dir = mkdtempSync(join(tmpdir(), "toybox-"));
@@ -60,9 +60,8 @@ test.skipIf(!existsSync(ORCA) || !existsSync(SLICER)).each(parts)(
     ];
     const proc = Bun.spawnSync(
       [
-        "uv",
-        "run",
-        SLICER,
+        KOBRA as string,
+        "slice",
         file,
         "--slot-for",
         "blue=1",
