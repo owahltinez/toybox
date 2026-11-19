@@ -27,6 +27,8 @@ The address bar always holds the robot, so any link shares it:
 `?name=Kitty&head=cat-purple&torso=star-yellow-115&arms=rocket-white&legs=springs-purple`
 (style, color, then size in % unless 100). A link without parts starts with a
 random robot.
+Share opens the link as a QR code, generated in the browser so it works
+offline, with Copy and the device's share sheet. Shared links drop `tv=1`.
 
 ## How parts print
 

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { toCreasedNormals } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { renderSVG } from "uqr";
 import {
   build,
   type Color,
@@ -26,11 +27,17 @@ interface State {
   problems: string[];
   stats: string;
   presets: string[];
-  shared: string;
+  link: string;
+  qr: string;
+  copied: boolean;
+  note: string;
+  canSend: boolean;
   editing: boolean;
   choose: (select: HTMLSelectElement) => void;
   surprise: () => void;
   share: () => Promise<void>;
+  copy: () => Promise<void>;
+  send: () => Promise<void>;
   rename: (name: string) => void;
   cycle: (slot: Slot, dir: number) => void;
   resize: (slot: Slot, dir: number) => void;
@@ -156,11 +163,17 @@ const renderer = new Renderer<State>({
   problems: [],
   stats: "",
   presets: PRESETS.map((p) => p.name),
-  shared: "",
+  link: "",
+  qr: "",
+  copied: false,
+  note: "",
+  canSend: "share" in navigator,
   editing: !params.has("tv"),
   choose: () => {},
   surprise: () => {},
   share: async () => {},
+  copy: async () => {},
+  send: async () => {},
   rename: () => {},
   cycle: () => {},
   resize: () => {},
@@ -212,6 +225,11 @@ await initMancha({
       history.replaceState(null, "", `?${toQuery(robot)}${tv}`);
       render(robot);
     };
+    const dialog = document.getElementById("share") as HTMLDialogElement;
+    // Clicks outside the content land on the dialog itself: the backdrop.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
     const change = (slot: Slot, patch: Partial<Robot[Slot]>) =>
       update({ ...$.robot, [slot]: { ...$.robot[slot], ...patch } });
 
@@ -222,19 +240,46 @@ await initMancha({
       if (preset) update(preset);
     };
     $.surprise = () => update(randomRobot());
+    /** Opens the share dialog with a QR code for this robot's link. */
     $.share = async () => {
+      // The robot only; TV mode is the viewer's choice.
+      const link = `${location.origin}${location.pathname}?${toQuery($.robot)}`;
+      // Dark on white with the 4-module quiet zone scanners expect.
+      const qr = renderSVG(link, { ecc: "M", border: 4 }).replace(
+        "<svg ",
+        '<svg width="100%" height="100%" shape-rendering="crispEdges" ',
+      );
+      // Open once rendered, so the dialog never flashes empty.
+      await Promise.all([
+        renderer.set("link", link),
+        renderer.set("qr", qr),
+        renderer.set("copied", false),
+        renderer.set("note", ""),
+      ]);
+      dialog.showModal();
+    };
+    $.copy = async () => {
       try {
-        if (navigator.share) {
-          await navigator.share({ title: $.robot.name, url: location.href });
-          return;
-        }
-        await navigator.clipboard.writeText(location.href);
-        $.shared = "Copied!";
-        setTimeout(() => ($.shared = ""), 2000);
+        await navigator.clipboard.writeText($.link);
+        $.copied = true;
+        $.note = "Link copied";
+        setTimeout(() => ($.copied = false), 2000);
+      } catch (err) {
+        console.error("couldn't copy the link", { err });
+        (document.getElementById("share-link") as HTMLInputElement).select();
+        $.note = "Press Ctrl+C or ⌘C to copy the selected link";
+      }
+    };
+    $.send = async () => {
+      try {
+        await navigator.share({
+          title: $.robot.name || "My robot",
+          url: $.link,
+        });
       } catch (err) {
         // Closing the share sheet is not a problem.
         if ((err as Error).name !== "AbortError") {
-          $.problems = [`couldn't share: ${(err as Error).message}`];
+          $.note = `Couldn't open sharing: ${(err as Error).message}`;
         }
       }
     };
@@ -277,7 +322,7 @@ await initMancha({
     };
     window.addEventListener("keydown", (e) => {
       const typing = e.target instanceof HTMLInputElement;
-      if (e.key === "e" && !typing) $.editing = !$.editing;
+      if (e.key === "e" && !typing && !dialog.open) $.editing = !$.editing;
     });
 
     update(fromQuery(params) ?? randomRobot());
