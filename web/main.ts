@@ -168,9 +168,9 @@ const $ = renderer.$;
 await initMancha({
   renderer,
   css: ["utils"],
-  cloak: true,
   callback: async (r) => {
     await r.mount(document.body);
+    document.body.dataset.mounted = "1";
     const show = mountViewer(
       document.getElementById("viewport") as HTMLElement,
     );

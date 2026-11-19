@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="data:,">
     <title>Toybox</title>
+    <!-- Dark and blank until mancha mounts, which waits for the 3D engine. -->
+    <style>
+      html { background: #111827; }
+      body:not([data-mounted]) { visibility: hidden; }
+    </style>
     <script type="module" src="./main.js"></script>
   </head>
   <body class="m-0 h-dvh w-dvw flex flex-col md:flex-row bg-gray-900 text-white font-sans overflow-hidden">
