@@ -9,7 +9,8 @@ export interface Part {
   color: Color;
 }
 
-// Sturdy PLA: strength comes from walls, so tongues end up solid.
+// Sturdy PLA: strength comes from walls, so tongues end up solid. Written as
+// Orca per-object settings: 3MF has no standard place for slicer settings.
 const SETTINGS = {
   wall_loops: "4",
   sparse_infill_pattern: "gyroid",
@@ -22,6 +23,7 @@ const TYPES = `<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
 <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
 <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>
+<Default Extension="config" ContentType="application/xml"/>
 </Types>`;
 const RELS = `<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
@@ -46,16 +48,13 @@ export function robotParts(pieces: Piece[]): Part[] {
   });
 }
 
-/** Packs parts into a core-spec 3MF with the slicer settings the joints need. */
+/** Packs parts into a core-spec 3MF, plus the Orca settings the joints need. */
 export function to3mf(parts: Part[], title: string): Uint8Array {
   const colors = [...new Set(parts.map((p) => p.color))];
   const out = [
     `<?xml version="1.0" encoding="UTF-8"?>
-<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:slicer="https://owahltinez.github.io/toybox/3mf/slicer">`,
+<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">`,
     `<metadata name="Title">${xml(title)}</metadata>`,
-    ...Object.entries(SETTINGS).map(
-      ([k, v]) => `<metadata name="slicer:${k}">${v}</metadata>`,
-    ),
     "<resources>",
     '<basematerials id="1">',
     ...colors.map(
@@ -64,6 +63,7 @@ export function to3mf(parts: Part[], title: string): Uint8Array {
     "</basematerials>",
   ];
   const items: string[] = [];
+  const config = ['<?xml version="1.0" encoding="UTF-8"?>', "<config>"];
   let cursor = 0;
   for (const [i, { name, mesh, color }] of parts.entries()) {
     const { positions: p, indices: t } = mesh;
@@ -88,11 +88,20 @@ export function to3mf(parts: Part[], title: string): Uint8Array {
       `<item objectid="${id}" transform="1 0 0 0 1 0 0 0 1 ${num(cursor - minX)} 0 0"/>`,
     );
     cursor += maxX - minX + GAP;
+    config.push(
+      `<object id="${id}">`,
+      ...Object.entries({ name, ...SETTINGS }).map(
+        ([k, v]) => `<metadata key="${k}" value="${xml(v)}"/>`,
+      ),
+      "</object>",
+    );
   }
+  config.push("</config>");
   out.push("</resources>", "<build>", ...items, "</build>", "</model>");
   return zipSync({
     "[Content_Types].xml": strToU8(TYPES),
     "_rels/.rels": strToU8(RELS),
     "3D/3dmodel.model": strToU8(out.join("\n")),
+    "Metadata/model_settings.config": strToU8(config.join("\n")),
   });
 }

@@ -70,9 +70,13 @@ test("a robot's 3MF holds each part in print pose, named and colored", () => {
 
   expect(Object.keys(files).sort()).toEqual([
     "3D/3dmodel.model",
+    "Metadata/model_settings.config",
     "[Content_Types].xml",
     "_rels/.rels",
   ]);
+  expect(strFromU8(files["[Content_Types].xml"])).toContain(
+    'Extension="config"',
+  );
   expect(strFromU8(files["_rels/.rels"])).toContain(
     'Target="/3D/3dmodel.model"',
   );
@@ -81,15 +85,8 @@ test("a robot's 3MF holds each part in print pose, named and colored", () => {
   expect(model.xmlns).toBe(
     "http://schemas.microsoft.com/3dmanufacturing/core/2015/02",
   );
-  expect(model["xmlns:slicer"]).toBe(
-    "https://owahltinez.github.io/toybox/3mf/slicer",
-  );
-  expect(metadata).toEqual({
-    Title: robot.name,
-    "slicer:wall_loops": "4",
-    "slicer:sparse_infill_pattern": "gyroid",
-    "slicer:sparse_infill_density": "20%",
-  });
+  expect(Object.keys(model).sort()).toEqual(["unit", "xml:lang", "xmlns"]);
+  expect(metadata).toEqual({ Title: robot.name });
 
   const bases = elements(xml, "base");
   expect(elements(xml, "basematerials")).toEqual([{ id: "1" }]);
@@ -121,6 +118,28 @@ test("a robot's 3MF holds each part in print pose, named and colored", () => {
     expect(o.triangles).toBe(mesh.indices.length / 3);
     expect(o.zMin).toBe(0);
     expect(o.volume).toBeCloseTo(pieces[i].print.volume(), 0);
+  }
+
+  // Orca's per-object settings: every part gets what the joints need.
+  const config = strFromU8(files["Metadata/model_settings.config"]);
+  const settings = [
+    ...config.matchAll(/<object id="(\d+)">([\s\S]*?)<\/object>/g),
+  ];
+  expect(settings.map((o) => o[1])).toEqual(objects.map((o) => o.attrs.id));
+  for (const [i, [, , body]] of settings.entries()) {
+    expect(
+      Object.fromEntries(
+        [...body.matchAll(/key="([^"]+)" value="([^"]*)"/g)].map((e) => [
+          e[1],
+          e[2],
+        ]),
+      ),
+    ).toEqual({
+      name: names[i],
+      wall_loops: "4",
+      sparse_infill_pattern: "gyroid",
+      sparse_infill_density: "20%",
+    });
   }
 
   const items = elements(xml, "item");

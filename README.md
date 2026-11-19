@@ -13,7 +13,7 @@ supports and snap together.
 - `src/joints.ts`: tongues and sockets
 - `src/shapes.ts`: 2D outlines and layer-built slabs
 - `src/mesh.ts`: manifold-3d loading and mesh copies
-- `src/threemf.ts`: the 3MF download: parts, colors and slicer settings
+- `src/threemf.ts`: the 3MF download: parts, colors and per-object Orca settings
 - `src/server.ts`: serves the build locally
 - `src/link.ts`: robots as shareable URL parameters
 - `src/presets.ts`: example robots and the random one
@@ -52,8 +52,10 @@ Press Download in the app for `<robot>.3mf`, a plain core-spec 3MF:
 - one object per part, already in print pose, named `torso`, `head`,
   `arm-left`...
 - each object's color as a `basematerials` entry: palette name and hex
-- `slicer:` metadata with the OrcaSlicer settings the joints need (4 walls,
-  20% gyroid)
+- the settings the joints need (4 walls, 20% gyroid) per object in
+  `Metadata/model_settings.config`. 3MF has no standard place for slicer
+  settings; OrcaSlicer and Anycubic Slicer Next read this file (Bambu Studio
+  shares the format), other slicers use their defaults.
 
 Map each color to a loaded filament and print the parts one at a time, so
 filament only changes between parts.
