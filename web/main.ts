@@ -132,6 +132,10 @@ function mountViewer(el: HTMLElement) {
   };
 }
 
+// Offline support and installing as an app.
+navigator.serviceWorker?.register("sw.js").catch((err) => {
+  console.error("service worker failed to register", { err });
+});
 const manifold = await loadManifold(() => "manifold.wasm");
 
 const SLOTS: Slot[] = ["head", "torso", "arms", "legs"];

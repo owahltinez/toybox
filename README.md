@@ -18,6 +18,8 @@ supports and snap together.
 - `src/link.ts`: robots as shareable URL parameters
 - `src/presets.ts`: example robots and the random one
 - `web/`: mancha + three.js viewer with part, size and color controls; works on phones; `?tv=1` hides the controls (or press E)
+- `web/public/`: icon, PWA manifest and service worker (network first, cached
+  for offline); the PNG icons are renders of `icon.svg`
 
 ## Links
 
